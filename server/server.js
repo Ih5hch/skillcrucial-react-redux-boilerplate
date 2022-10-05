@@ -1,6 +1,7 @@
 import express from 'express'
 import path from 'path'
 import cors from 'cors'
+import axios from 'axios'
 import sockjs from 'sockjs'
 import cookieParser from 'cookie-parser'
 
@@ -29,6 +30,27 @@ server.get('/', (req, res) => {
     <h2>This is SkillCrucial Express Server!</h2>
     <h3>Client hosted at <a href="http://localhost:8087">localhost:8087</a>!</h3>
   `)
+})
+
+// server.get('/api/v1/users', (req, res) => {
+//   res.json({ name: 'Oleksii' })
+// })
+
+server.get('/api/v1/users', async (req, res) => {
+  const { data: users } = await axios('https://jsonplaceholder.typicode.com/users')
+  res.json(users)
+})
+
+server.get('/api/v1/users/take/:number', async (req, res) => {
+  const { number } = req.params
+  const { data: users } = await axios('https://jsonplaceholder.typicode.com/users')
+
+  res.json(users.slice(0, +number))
+})
+
+server.get('/api/v1/users/:name', (req, res) => {
+  const { name } = req.params
+  res.json({ name })
 })
 
 server.get('/*', (req, res) => {
