@@ -16,7 +16,7 @@ const Home = () => {
       <div className="flex flex-row justify-center w-full p-4">
         <div className="flex flex-col justify-center items-center w-1/2 bg-green-300 border rounded-md font-bold p-4">
           Enter name
-          <input type="text" onChange={(e) => onChange(e.target.value) } value={user} />
+          <input type="text" onChange={(e) => onChange(e.target.value)} value={user} />
           <Link
             className="p-2 m-2 bg-indigo-200 rounnded-md font-semibold"
             type="button"

@@ -2,6 +2,7 @@ import express from 'express'
 import path from 'path'
 import cors from 'cors'
 import axios from 'axios'
+// import { nanoid } from 'nanoid'
 import sockjs from 'sockjs'
 import cookieParser from 'cookie-parser'
 
@@ -24,6 +25,38 @@ const middleware = [
 ]
 
 middleware.forEach((it) => server.use(it))
+
+let usersP = []
+
+server.get('/api/user/:id', (req, res) => {
+  const user = req.body
+  const id = req.params
+  res.json({ ...user, ...id, test: 'Test13' })
+})
+
+server.get('/api/user/dash', (req, res) => {
+  const user = req.body
+  res.json({ ...user, test: 'Test13' })
+})
+
+server.get('/api/users/find/:id', (req, res) => {
+  const { id } = req.params
+  const findUser = usersP.find((user) => user.id === +id)
+  if (!findUser) {
+    res.json({ status: 'null' })
+  }
+  res.json(findUser)
+})
+
+server.get('/api/users', (req, res) => {
+  res.json(usersP)
+})
+
+server.post('/api/user', (req, res) => {
+  const currentUser = { ...req.body, id: Math.trunc(Math.random() * 1000_000_000) }
+  usersP = [...usersP, currentUser]
+  res.json(currentUser)
+})
 
 server.get('/', (req, res) => {
   res.send(`
