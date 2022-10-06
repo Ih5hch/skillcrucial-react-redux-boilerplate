@@ -9,6 +9,8 @@ import cookieParser from 'cookie-parser'
 import config from './config'
 import Html from '../client/html'
 
+const { readFile, writeFile } = require('fs').promises
+
 require('colors')
 
 let connections = []
@@ -27,6 +29,26 @@ const middleware = [
 middleware.forEach((it) => server.use(it))
 
 let usersP = []
+const usersPath = `${__dirname}/data/users.json`
+
+server.get('/api/fakeusers', async (req, res) => {
+  try {
+    const strData = await readFile(usersPath, 'utf-8')
+    res.json(JSON.parse(strData))
+  } catch (e) {
+    console.log(e)
+
+    try {
+      const { data } = await axios('htps://jsonplaceholder.typicode.com/users')
+      usersP = [...usersP, ...data]
+      writeFile(usersPath, JSON.stringify(data), 'utf-8')
+      res.json({ status: 'success', users_amount: usersP.length, users: data })
+    } catch (err) {
+      console.log(err)
+      res.json({ status: 'Error', case: err.message })
+    }
+  }
+})
 
 server.get('/api/user/:id', (req, res) => {
   const user = req.body
@@ -34,7 +56,7 @@ server.get('/api/user/:id', (req, res) => {
   res.json({ ...user, ...id, test: 'Test13' })
 })
 
-server.get('/api/user/dash', (req, res) => {
+server.get('/api/user/test', (req, res) => {
   const user = req.body
   res.json({ ...user, test: 'Test13' })
 })
