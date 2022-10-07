@@ -18,12 +18,19 @@ let connections = []
 const port = process.env.PORT || 8090
 const server = express()
 
+const setHeader = (req, res, next) => {
+  res.set('x-skillcrucial-user', 'c2b01230-e471-4abc-bb6f-fa594c3bd195')
+  res.set('Access-Control-Expose-Headers', 'X-SKILLCRUCIAL-USER')
+  next()
+}
+
 const middleware = [
   cors(),
   express.static(path.resolve(__dirname, '../dist')),
   express.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }),
   express.json({ limit: '50mb', extended: true }),
-  cookieParser()
+  cookieParser(),
+  setHeader
 ]
 
 middleware.forEach((it) => server.use(it))
@@ -39,7 +46,7 @@ server.get('/api/fakeusers', async (req, res) => {
     console.log(e)
 
     try {
-      const { data } = await axios('htps://jsonplaceholder.typicode.com/users')
+      const { data } = await axios('https://jsonplaceholder.typicode.com/users')
       usersP = [...usersP, ...data]
       writeFile(usersPath, JSON.stringify(data), 'utf-8')
       res.json({ status: 'success', users_amount: usersP.length, users: data })
@@ -48,6 +55,20 @@ server.get('/api/fakeusers', async (req, res) => {
       res.json({ status: 'Error', case: err.message })
     }
   }
+})
+
+server.post('/api/fakeusers', async (req, res) => {
+  const newUser = { ...req.body, id: '993ff78' }
+  const readUser = await readFile(usersPath, 'utf-8')
+    .then((usersStored) => {
+      return JSON.parse(usersStored)
+    })
+    .catch(() => {
+      return []
+    })
+  const newUsersList = [...readUser, newUser]
+  await writeFile(usersPath, JSON.stringify(newUsersList), 'utf-8')
+  res.json({ status: 'success', newUser })
 })
 
 server.get('/api/user/:id', (req, res) => {
