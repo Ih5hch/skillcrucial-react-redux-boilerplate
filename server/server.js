@@ -9,7 +9,7 @@ import cookieParser from 'cookie-parser'
 import config from './config'
 import Html from '../client/html'
 
-const { readFile, writeFile } = require('fs').promises
+const { readFile, writeFile, unlink } = require('fs').promises
 
 require('colors')
 
@@ -112,9 +112,92 @@ server.get('/', (req, res) => {
 //   res.json({ name: 'Oleksii' })
 // })
 
+// Homework
+const url = 'https://jsonplaceholder.typicode.com/users'
+
+const writeNewFile = (arrData) => {
+  return writeFile(usersPath, JSON.stringify(arrData), 'utf-8')
+}
+
 server.get('/api/v1/users', async (req, res) => {
-  const { data: users } = await axios('https://jsonplaceholder.typicode.com/users')
-  res.json(users)
+  const usersInFile = await readFile(usersPath, 'utf-8')
+    .then((data) => {
+      return JSON.parse(data)
+    })
+    .catch(async () => {
+      const { data: users } = await axios(url)
+      return users
+    })
+  await writeNewFile(usersInFile)
+  res.json(usersInFile)
+})
+
+server.delete('/api/v1/users', async (req, res) => {
+  try {
+    await unlink(usersPath)
+    res.json({ status: 'File deleted' })
+  } catch (err) {
+    res.json({ status: 'No file' })
+  }
+  // unlink(usersPath)
+  //   .then(() => {
+  //     res.json({ status: 'File deleted' })
+  //   })
+  //   .catch((e) => {
+  //     console.log(e)
+  //     res.json({ status: 'No file' })
+  //   })
+})
+
+server.delete('/api/v1/users/:userId', async (req, res) => {
+  const { userId } = req.params
+  const usersStorade = await readFile(usersPath, 'utf-8')
+    .then(async (str) => {
+      const arrData = JSON.parse(str)
+      const filteredUsers = arrData.filter((userObj) => {
+        return userObj.id !== +userId
+      })
+      await writeNewFile(filteredUsers)
+      return { status: 'success', id: +userId }
+    })
+    .catch(() => {
+      res.json({ status: 'no file', id: +userId })
+    })
+  res.json(usersStorade)
+})
+
+server.post('/api/v1/users', async (req, res) => {
+  const usersInFile = await readFile(usersPath, 'utf-8')
+    .then(async (str) => {
+      const arrData = JSON.parse(str)
+      const lastUseriD = +arrData.at(-1).id
+      await writeNewFile([...arrData, { ...req.body, id: lastUseriD + 1 }])
+      return { status: 'success', id: lastUseriD + 1 }
+    })
+    .catch(async (err) => {
+      console.log(err)
+      await writeNewFile([{ ...req.body, id: 1 }])
+      res.json({ status: 'user added', id: 1 })
+    })
+  res.json(usersInFile)
+})
+
+server.patch('/api/v1/users/:userId', async (req, res) => {
+  const { userId } = req.params
+  const newUser = { ...req.body, id: +userId }
+  const usersStorage = await readFile(usersPath, 'utf-8')
+    .then(async (str) => {
+      const arrData = JSON.parse(str)
+      const updatedList = arrData.map((userObj) => {
+        return userObj.id === +userId ? { ...userObj, ...newUser } : userObj
+      })
+      await writeNewFile(updatedList)
+      return { status: 'success', id: +userId }
+    })
+    .catch(() => {
+      res.json({ status: 'no file', id: +userId })
+    })
+  res.json(usersStorage)
 })
 
 server.get('/api/v1/users/take/:number', async (req, res) => {
